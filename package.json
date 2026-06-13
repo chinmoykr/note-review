@@ -1,6 +1,6 @@
 {
   "name": "note-reviewer",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Review your notes using spaced repetition with customizable presets.",
   "main": "main.js",
   "scripts": {
