@@ -99,7 +99,7 @@ var SettingsTab = class extends import_obsidian.PluginSettingTab {
         const draggingItem = listContainer.querySelector(".is-dragging");
         if (!draggingItem)
           return;
-        const siblings = [...listContainer.querySelectorAll(".note-reviewer-drag-item:not(.is-dragging)")];
+        const siblings = Array.from(listContainer.querySelectorAll(".note-reviewer-drag-item:not(.is-dragging)"));
         const nextSibling = siblings.find((sibling) => {
           const rect = sibling.getBoundingClientRect();
           return e.clientY <= rect.top + rect.height / 2;
@@ -113,7 +113,7 @@ var SettingsTab = class extends import_obsidian.PluginSettingTab {
       itemEl.ondrop = async (e) => {
         e.preventDefault();
         if (draggedIndex !== null) {
-          const currentItems = [...listContainer.querySelectorAll(".note-reviewer-drag-item")];
+          const currentItems = Array.from(listContainer.querySelectorAll(".note-reviewer-drag-item"));
           const newIndex = currentItems.indexOf(itemEl);
           if (newIndex !== -1 && draggedIndex !== newIndex) {
             const newOrder = [...this.plugin.settings.sectionOrder];
