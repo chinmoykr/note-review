@@ -332,19 +332,26 @@ var ReviewView = class extends import_obsidian2.ItemView {
     const stageNotes = dueNotes.filter((n) => n.intervalIndex === 0);
     const todayNotes = dueNotes.filter((n) => n.intervalIndex > 0 && n.nextDate === todayStr);
     const overdueNotes = dueNotes.filter((n) => n.intervalIndex > 0 && (n.nextDate || "") < todayStr);
-    const renderSection = (title, notes) => {
+    const renderSection = (title, notes, defaultOpen = true) => {
       if (notes.length === 0)
         return;
-      const subHeader = container.createEl("h5", { text: `${title} (${notes.length})` });
-      subHeader.addClass("note-reviewer-subheader");
-      const listContainer = container.createDiv("note-reviewer-list");
+      const detailsEl = container.createEl("details");
+      if (defaultOpen) {
+        detailsEl.setAttribute("open", "");
+      }
+      detailsEl.style.marginBottom = "16px";
+      const summaryEl = detailsEl.createEl("summary", { text: `${title} (${notes.length})` });
+      summaryEl.addClass("note-reviewer-subheader");
+      summaryEl.style.cursor = "pointer";
+      summaryEl.style.userSelect = "none";
+      const listContainer = detailsEl.createDiv("note-reviewer-list");
       for (const item of notes) {
         this.renderReviewItem(listContainer, item);
       }
     };
-    renderSection("Overdue", overdueNotes);
-    renderSection("Today", todayNotes);
-    renderSection("Stage", stageNotes);
+    renderSection("Overdue", overdueNotes, true);
+    renderSection("Today", todayNotes, true);
+    renderSection("Stage", stageNotes, true);
   }
   renderReviewItem(parent, item) {
     const itemEl = parent.createDiv("note-reviewer-item");

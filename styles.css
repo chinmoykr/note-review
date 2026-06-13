@@ -5,8 +5,9 @@
 }
 
 .note-reviewer-subheader {
-    margin-top: 16px;
+    margin-top: 0;
     margin-bottom: 8px;
+    font-size: 1.1em;
     font-weight: 600;
     color: var(--text-normal);
     border-bottom: 1px solid var(--background-modifier-border);

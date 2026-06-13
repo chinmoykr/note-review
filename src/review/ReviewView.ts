@@ -70,20 +70,30 @@ export class ReviewView extends ItemView {
         const todayNotes = dueNotes.filter(n => n.intervalIndex > 0 && n.nextDate === todayStr);
         const overdueNotes = dueNotes.filter(n => n.intervalIndex > 0 && (n.nextDate || "") < todayStr);
 
-        const renderSection = (title: string, notes: ReviewItem[]) => {
+        const renderSection = (title: string, notes: ReviewItem[], defaultOpen: boolean = true) => {
             if (notes.length === 0) return;
-            const subHeader = container.createEl("h5", { text: `${title} (${notes.length})` });
-            subHeader.addClass("note-reviewer-subheader");
+
+            const detailsEl = container.createEl("details");
+            if (defaultOpen) {
+                detailsEl.setAttribute("open", "");
+            }
+            detailsEl.style.marginBottom = "16px";
+
+            const summaryEl = detailsEl.createEl("summary", { text: `${title} (${notes.length})` });
+            summaryEl.addClass("note-reviewer-subheader");
+            summaryEl.style.cursor = "pointer";
+            summaryEl.style.userSelect = "none";
             
-            const listContainer = container.createDiv("note-reviewer-list");
+            const listContainer = detailsEl.createDiv("note-reviewer-list");
             for (const item of notes) {
                 this.renderReviewItem(listContainer, item);
             }
         };
 
-        renderSection("Overdue", overdueNotes);
-        renderSection("Today", todayNotes);
-        renderSection("Stage", stageNotes);
+        // We can make Stage default closed if we want, or default open. Let's make all default open for now.
+        renderSection("Overdue", overdueNotes, true);
+        renderSection("Today", todayNotes, true);
+        renderSection("Stage", stageNotes, true);
     }
 
     private renderReviewItem(parent: HTMLElement, item: ReviewItem) {
