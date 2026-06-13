@@ -340,7 +340,8 @@ var ReviewManager = class {
     });
   }
   getPreset(name) {
-    const preset = this.settings.presets.find((p) => p.name === name);
+    const lowerName = name.toLowerCase();
+    const preset = this.settings.presets.find((p) => p.name.toLowerCase() === lowerName);
     if (preset)
       return preset;
     return this.settings.presets[0] || {

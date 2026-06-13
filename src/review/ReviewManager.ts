@@ -152,7 +152,8 @@ export class ReviewManager {
     }
 
     private getPreset(name: string) {
-        const preset = this.settings.presets.find(p => p.name === name);
+        const lowerName = name.toLowerCase();
+        const preset = this.settings.presets.find(p => p.name.toLowerCase() === lowerName);
         if (preset) return preset;
         
         // Fallback to default if not found
