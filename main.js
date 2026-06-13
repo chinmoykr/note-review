@@ -494,7 +494,6 @@ var ReviewView = class extends import_obsidian2.ItemView {
     const actionsEl = itemEl.createDiv("note-reviewer-actions");
     if (settings.showDoneButton !== false) {
       const doneBtn = actionsEl.createEl("button", { text: "\u2705 Done" });
-      doneBtn.addClass("mod-cta");
       doneBtn.onclick = async (e) => {
         e.stopPropagation();
         doneBtn.disabled = true;

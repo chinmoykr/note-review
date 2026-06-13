@@ -128,7 +128,6 @@ export class ReviewView extends ItemView {
 
         if (settings.showDoneButton !== false) {
             const doneBtn = actionsEl.createEl("button", { text: "✅ Done" });
-            doneBtn.addClass("mod-cta");
             doneBtn.onclick = async (e) => {
                 e.stopPropagation();
                 doneBtn.disabled = true;
