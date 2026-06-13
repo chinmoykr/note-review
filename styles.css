@@ -1,0 +1,81 @@
+.note-reviewer-header {
+    margin-top: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+    color: var(--text-normal);
+}
+
+.note-reviewer-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 40px;
+}
+
+.note-reviewer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.note-reviewer-item {
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: background-color 0.2s ease;
+}
+
+.note-reviewer-item:hover {
+    background-color: var(--background-secondary-alt);
+}
+
+.note-reviewer-title {
+    font-weight: 600;
+    font-size: 1.1em;
+    color: var(--text-normal);
+    cursor: pointer;
+}
+
+.note-reviewer-title:hover {
+    color: var(--text-accent);
+    text-decoration: underline;
+}
+
+.note-reviewer-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.note-reviewer-actions button {
+    flex: 1 1 calc(50% - 4px);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    min-width: fit-content;
+}
+
+.note-reviewer-actions button.mod-cta {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.note-reviewer-actions button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.note-reviewer-actions-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.85em;
+    color: var(--text-muted);
+    margin-top: 8px;
+}

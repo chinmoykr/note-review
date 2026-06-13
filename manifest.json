@@ -1,0 +1,10 @@
+{
+  "id": "note-reviewer",
+  "name": "Note Reviewer",
+  "version": "1.0.0",
+  "minAppVersion": "1.4.0",
+  "description": "Review your notes using spaced repetition with customizable presets.",
+  "author": "Antigravity",
+  "authorUrl": "",
+  "isDesktopOnly": false
+}

@@ -1,0 +1,20 @@
+{
+  "name": "note-reviewer",
+  "version": "1.0.0",
+  "description": "Review your notes using spaced repetition with customizable presets.",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "node esbuild.config.mjs production"
+  },
+  "keywords": [],
+  "author": "Antigravity",
+  "license": "MIT",
+  "devDependencies": {
+    "builtin-modules": "^5.2.0",
+    "esbuild": "^0.17.3",
+    "obsidian": "^1.4.0",
+    "tslib": "^2.4.0",
+    "typescript": "^5.0.0"
+  }
+}
