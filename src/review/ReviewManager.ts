@@ -12,7 +12,7 @@ export interface ReviewItem {
 
 export class ReviewManager {
     private app: App;
-    private settings: PluginSettings;
+    public settings: PluginSettings;
     private fmUtils: FrontmatterUtils;
 
     constructor(app: App, settings: PluginSettings, fmUtils: FrontmatterUtils) {

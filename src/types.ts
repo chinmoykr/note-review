@@ -8,6 +8,7 @@ export interface ReviewPreset {
 
 export interface PluginSettings {
     presets: ReviewPreset[];
+    sectionOrder: string[];
 }
 
 export interface NoteReviewerPluginType extends Plugin {
@@ -16,6 +17,7 @@ export interface NoteReviewerPluginType extends Plugin {
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
+    sectionOrder: ["Overdue", "Today", "Stage"],
     presets: [
         {
             name: "standard",

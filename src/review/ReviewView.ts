@@ -90,10 +90,14 @@ export class ReviewView extends ItemView {
             }
         };
 
-        // We can make Stage default closed if we want, or default open. Let's make all default open for now.
-        renderSection("Overdue", overdueNotes, true);
-        renderSection("Today", todayNotes, true);
-        renderSection("Stage", stageNotes, true);
+        // Read section order from settings
+        const order = this.reviewManager.settings.sectionOrder || ["Overdue", "Today", "Stage"];
+        
+        order.forEach(sectionName => {
+            if (sectionName === "Overdue") renderSection("Overdue", overdueNotes, true);
+            else if (sectionName === "Today") renderSection("Today", todayNotes, true);
+            else if (sectionName === "Stage") renderSection("Stage", stageNotes, true);
+        });
     }
 
     private renderReviewItem(parent: HTMLElement, item: ReviewItem) {

@@ -15,6 +15,91 @@ export class SettingsTab extends PluginSettingTab {
 
         containerEl.createEl("h2", { text: "Note Reviewer Settings" });
 
+        // Section Layout Settings
+        containerEl.createEl("h3", { text: "Section Layout" });
+        containerEl.createEl("p", {
+            text: "Drag and drop to rearrange the sections in the Review Pane."
+        });
+
+        const listContainer = containerEl.createDiv("note-reviewer-drag-list");
+        let draggedIndex: number | null = null;
+
+        // Ensure sectionOrder is populated if it was missing from old settings
+        if (!this.plugin.settings.sectionOrder || this.plugin.settings.sectionOrder.length === 0) {
+            this.plugin.settings.sectionOrder = ["Overdue", "Today", "Stage"];
+        }
+
+        this.plugin.settings.sectionOrder.forEach((sectionName, index) => {
+            const itemEl = listContainer.createDiv("note-reviewer-drag-item");
+            itemEl.setAttribute("draggable", "true");
+            
+            const contentEl = itemEl.createDiv();
+            contentEl.style.display = "flex";
+            contentEl.style.alignItems = "center";
+            contentEl.style.gap = "8px";
+
+            contentEl.createSpan({ text: "☰", cls: "note-reviewer-drag-handle" });
+            contentEl.createSpan({ text: sectionName });
+
+            itemEl.ondragstart = (e) => {
+                draggedIndex = index;
+                itemEl.addClass("is-dragging");
+                if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+            };
+
+            itemEl.ondragover = (e) => {
+                e.preventDefault();
+                if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+                
+                const draggingItem = listContainer.querySelector(".is-dragging");
+                if (!draggingItem) return;
+
+                const siblings = [...listContainer.querySelectorAll(".note-reviewer-drag-item:not(.is-dragging)")];
+                const nextSibling = siblings.find(sibling => {
+                    const rect = sibling.getBoundingClientRect();
+                    return e.clientY <= rect.top + rect.height / 2;
+                });
+                if (nextSibling) {
+                    listContainer.insertBefore(draggingItem, nextSibling);
+                } else {
+                    listContainer.appendChild(draggingItem);
+                }
+            };
+
+            itemEl.ondrop = async (e) => {
+                e.preventDefault();
+                if (draggedIndex !== null) {
+                    // Re-calculate the actual new index based on the DOM position
+                    const currentItems = [...listContainer.querySelectorAll(".note-reviewer-drag-item")];
+                    const newIndex = currentItems.indexOf(itemEl);
+                    
+                    if (newIndex !== -1 && draggedIndex !== newIndex) {
+                        const newOrder = [...this.plugin.settings.sectionOrder];
+                        const [removed] = newOrder.splice(draggedIndex, 1);
+                        newOrder.splice(newIndex, 0, removed);
+                        
+                        this.plugin.settings.sectionOrder = newOrder;
+                        await this.plugin.saveSettings();
+                        
+                        // Notify views to re-render
+                        this.app.workspace.getLeavesOfType("note-reviewer-view").forEach(leaf => {
+                            if (leaf.view && typeof (leaf.view as any).renderView === "function") {
+                                (leaf.view as any).renderView();
+                            }
+                        });
+                    }
+                }
+            };
+
+            itemEl.ondragend = () => {
+                draggedIndex = null;
+                itemEl.removeClass("is-dragging");
+                this.display(); // Full refresh to ensure clean state
+            };
+        });
+
+        containerEl.createEl("hr");
+
         containerEl.createEl("h3", { text: "Presets" });
         containerEl.createEl("p", {
             text: "Define presets that you can assign to your notes. In a note's frontmatter, set 'review: preset_name' to use it."

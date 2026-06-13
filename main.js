@@ -31,6 +31,7 @@ var import_obsidian3 = require("obsidian");
 
 // src/types.ts
 var DEFAULT_SETTINGS = {
+  sectionOrder: ["Overdue", "Today", "Stage"],
   presets: [
     {
       name: "standard",
@@ -67,6 +68,74 @@ var SettingsTab = class extends import_obsidian.PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
     containerEl.createEl("h2", { text: "Note Reviewer Settings" });
+    containerEl.createEl("h3", { text: "Section Layout" });
+    containerEl.createEl("p", {
+      text: "Drag and drop to rearrange the sections in the Review Pane."
+    });
+    const listContainer = containerEl.createDiv("note-reviewer-drag-list");
+    let draggedIndex = null;
+    if (!this.plugin.settings.sectionOrder || this.plugin.settings.sectionOrder.length === 0) {
+      this.plugin.settings.sectionOrder = ["Overdue", "Today", "Stage"];
+    }
+    this.plugin.settings.sectionOrder.forEach((sectionName, index) => {
+      const itemEl = listContainer.createDiv("note-reviewer-drag-item");
+      itemEl.setAttribute("draggable", "true");
+      const contentEl = itemEl.createDiv();
+      contentEl.style.display = "flex";
+      contentEl.style.alignItems = "center";
+      contentEl.style.gap = "8px";
+      contentEl.createSpan({ text: "\u2630", cls: "note-reviewer-drag-handle" });
+      contentEl.createSpan({ text: sectionName });
+      itemEl.ondragstart = (e) => {
+        draggedIndex = index;
+        itemEl.addClass("is-dragging");
+        if (e.dataTransfer)
+          e.dataTransfer.effectAllowed = "move";
+      };
+      itemEl.ondragover = (e) => {
+        e.preventDefault();
+        if (e.dataTransfer)
+          e.dataTransfer.dropEffect = "move";
+        const draggingItem = listContainer.querySelector(".is-dragging");
+        if (!draggingItem)
+          return;
+        const siblings = [...listContainer.querySelectorAll(".note-reviewer-drag-item:not(.is-dragging)")];
+        const nextSibling = siblings.find((sibling) => {
+          const rect = sibling.getBoundingClientRect();
+          return e.clientY <= rect.top + rect.height / 2;
+        });
+        if (nextSibling) {
+          listContainer.insertBefore(draggingItem, nextSibling);
+        } else {
+          listContainer.appendChild(draggingItem);
+        }
+      };
+      itemEl.ondrop = async (e) => {
+        e.preventDefault();
+        if (draggedIndex !== null) {
+          const currentItems = [...listContainer.querySelectorAll(".note-reviewer-drag-item")];
+          const newIndex = currentItems.indexOf(itemEl);
+          if (newIndex !== -1 && draggedIndex !== newIndex) {
+            const newOrder = [...this.plugin.settings.sectionOrder];
+            const [removed] = newOrder.splice(draggedIndex, 1);
+            newOrder.splice(newIndex, 0, removed);
+            this.plugin.settings.sectionOrder = newOrder;
+            await this.plugin.saveSettings();
+            this.app.workspace.getLeavesOfType("note-reviewer-view").forEach((leaf) => {
+              if (leaf.view && typeof leaf.view.renderView === "function") {
+                leaf.view.renderView();
+              }
+            });
+          }
+        }
+      };
+      itemEl.ondragend = () => {
+        draggedIndex = null;
+        itemEl.removeClass("is-dragging");
+        this.display();
+      };
+    });
+    containerEl.createEl("hr");
     containerEl.createEl("h3", { text: "Presets" });
     containerEl.createEl("p", {
       text: "Define presets that you can assign to your notes. In a note's frontmatter, set 'review: preset_name' to use it."
@@ -349,9 +418,15 @@ var ReviewView = class extends import_obsidian2.ItemView {
         this.renderReviewItem(listContainer, item);
       }
     };
-    renderSection("Overdue", overdueNotes, true);
-    renderSection("Today", todayNotes, true);
-    renderSection("Stage", stageNotes, true);
+    const order = this.reviewManager.settings.sectionOrder || ["Overdue", "Today", "Stage"];
+    order.forEach((sectionName) => {
+      if (sectionName === "Overdue")
+        renderSection("Overdue", overdueNotes, true);
+      else if (sectionName === "Today")
+        renderSection("Today", todayNotes, true);
+      else if (sectionName === "Stage")
+        renderSection("Stage", stageNotes, true);
+    });
   }
   renderReviewItem(parent, item) {
     const itemEl = parent.createDiv("note-reviewer-item");
