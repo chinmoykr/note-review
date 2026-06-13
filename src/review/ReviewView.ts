@@ -70,7 +70,7 @@ export class ReviewView extends ItemView {
         const todayNotes = dueNotes.filter(n => n.intervalIndex > 0 && n.nextDate === todayStr);
         const overdueNotes = dueNotes.filter(n => n.intervalIndex > 0 && (n.nextDate || "") < todayStr);
 
-        const renderSection = (title: string, notes: ReviewItem[], defaultOpen: boolean = true) => {
+        const renderSection = async (title: string, notes: ReviewItem[], defaultOpen: boolean = true) => {
             if (notes.length === 0) return;
 
             const detailsEl = container.createEl("details");
@@ -86,21 +86,21 @@ export class ReviewView extends ItemView {
             
             const listContainer = detailsEl.createDiv("note-reviewer-list");
             for (const item of notes) {
-                this.renderReviewItem(listContainer, item);
+                await this.renderReviewItem(listContainer, item);
             }
         };
 
         // Read section order from settings
         const order = this.reviewManager.settings.sectionOrder || ["Overdue", "Today", "Stage"];
         
-        order.forEach(sectionName => {
-            if (sectionName === "Overdue") renderSection("Overdue", overdueNotes, true);
-            else if (sectionName === "Today") renderSection("Today", todayNotes, true);
-            else if (sectionName === "Stage") renderSection("Stage", stageNotes, true);
-        });
+        for (const sectionName of order) {
+            if (sectionName === "Overdue") await renderSection("Overdue", overdueNotes, true);
+            else if (sectionName === "Today") await renderSection("Today", todayNotes, true);
+            else if (sectionName === "Stage") await renderSection("Stage", stageNotes, true);
+        }
     }
 
-    private renderReviewItem(parent: HTMLElement, item: ReviewItem) {
+    private async renderReviewItem(parent: HTMLElement, item: ReviewItem) {
         const itemEl = parent.createDiv("note-reviewer-item");
         const settings = this.reviewManager.settings;
         
@@ -108,7 +108,15 @@ export class ReviewView extends ItemView {
         const headerEl = itemEl.createDiv("note-reviewer-item-header");
         
         const titleEl = headerEl.createDiv("note-reviewer-title");
-        titleEl.setText(item.file.basename);
+        
+        if (item.presetName.toLowerCase() === "pebble") {
+            const content = await this.app.vault.cachedRead(item.file);
+            const contentWithoutFrontmatter = content.replace(/^---[\r\n]+[\s\S]*?[\r\n]+---[\r\n]+/, "").trim();
+            titleEl.setText(contentWithoutFrontmatter || item.file.basename);
+        } else {
+            titleEl.setText(item.file.basename);
+        }
+
         titleEl.onclick = async () => {
             await this.app.workspace.getLeaf(false).openFile(item.file);
         };

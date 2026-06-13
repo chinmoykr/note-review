@@ -447,7 +447,7 @@ var ReviewView = class extends import_obsidian2.ItemView {
     const stageNotes = dueNotes.filter((n) => n.intervalIndex === 0);
     const todayNotes = dueNotes.filter((n) => n.intervalIndex > 0 && n.nextDate === todayStr);
     const overdueNotes = dueNotes.filter((n) => n.intervalIndex > 0 && (n.nextDate || "") < todayStr);
-    const renderSection = (title, notes, defaultOpen = true) => {
+    const renderSection = async (title, notes, defaultOpen = true) => {
       if (notes.length === 0)
         return;
       const detailsEl = container.createEl("details");
@@ -461,25 +461,31 @@ var ReviewView = class extends import_obsidian2.ItemView {
       summaryEl.style.userSelect = "none";
       const listContainer = detailsEl.createDiv("note-reviewer-list");
       for (const item of notes) {
-        this.renderReviewItem(listContainer, item);
+        await this.renderReviewItem(listContainer, item);
       }
     };
     const order = this.reviewManager.settings.sectionOrder || ["Overdue", "Today", "Stage"];
-    order.forEach((sectionName) => {
+    for (const sectionName of order) {
       if (sectionName === "Overdue")
-        renderSection("Overdue", overdueNotes, true);
+        await renderSection("Overdue", overdueNotes, true);
       else if (sectionName === "Today")
-        renderSection("Today", todayNotes, true);
+        await renderSection("Today", todayNotes, true);
       else if (sectionName === "Stage")
-        renderSection("Stage", stageNotes, true);
-    });
+        await renderSection("Stage", stageNotes, true);
+    }
   }
-  renderReviewItem(parent, item) {
+  async renderReviewItem(parent, item) {
     const itemEl = parent.createDiv("note-reviewer-item");
     const settings = this.reviewManager.settings;
     const headerEl = itemEl.createDiv("note-reviewer-item-header");
     const titleEl = headerEl.createDiv("note-reviewer-title");
-    titleEl.setText(item.file.basename);
+    if (item.presetName.toLowerCase() === "pebble") {
+      const content = await this.app.vault.cachedRead(item.file);
+      const contentWithoutFrontmatter = content.replace(/^---[\r\n]+[\s\S]*?[\r\n]+---[\r\n]+/, "").trim();
+      titleEl.setText(contentWithoutFrontmatter || item.file.basename);
+    } else {
+      titleEl.setText(item.file.basename);
+    }
     titleEl.onclick = async () => {
       await this.app.workspace.getLeaf(false).openFile(item.file);
     };
