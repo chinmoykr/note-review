@@ -7,6 +7,7 @@ export interface ReviewItem {
     file: TFile;
     presetName: string;
     nextDate: string | null;
+    intervalIndex: number;
 }
 
 export class ReviewManager {
@@ -32,7 +33,8 @@ export class ReviewManager {
             if (presetName) {
                 const nextDate = this.fmUtils.getProperty(file, FRONTMATTER_KEYS.NEXT_DATE);
                 if (DateUtils.isDue(nextDate)) {
-                    dueNotes.push({ file, presetName, nextDate });
+                    const intervalIndex = Number(this.fmUtils.getProperty(file, FRONTMATTER_KEYS.INTERVAL_INDEX)) || 0;
+                    dueNotes.push({ file, presetName, nextDate, intervalIndex });
                 }
             }
         }

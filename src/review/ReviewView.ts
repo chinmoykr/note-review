@@ -1,5 +1,6 @@
 import { ItemView, WorkspaceLeaf, setIcon } from "obsidian";
 import { ReviewManager, ReviewItem } from "./ReviewManager";
+import { DateUtils } from "../utils/DateUtils";
 
 export const REVIEW_VIEW_TYPE = "note-reviewer-view";
 
@@ -63,11 +64,26 @@ export class ReviewView extends ItemView {
             return;
         }
 
-        const listContainer = container.createDiv("note-reviewer-list");
+        const todayStr = DateUtils.getTodayStr();
 
-        for (const item of dueNotes) {
-            this.renderReviewItem(listContainer, item);
-        }
+        const stageNotes = dueNotes.filter(n => n.intervalIndex === 0);
+        const todayNotes = dueNotes.filter(n => n.intervalIndex > 0 && n.nextDate === todayStr);
+        const overdueNotes = dueNotes.filter(n => n.intervalIndex > 0 && (n.nextDate || "") < todayStr);
+
+        const renderSection = (title: string, notes: ReviewItem[]) => {
+            if (notes.length === 0) return;
+            const subHeader = container.createEl("h5", { text: `${title} (${notes.length})` });
+            subHeader.addClass("note-reviewer-subheader");
+            
+            const listContainer = container.createDiv("note-reviewer-list");
+            for (const item of notes) {
+                this.renderReviewItem(listContainer, item);
+            }
+        };
+
+        renderSection("Overdue", overdueNotes);
+        renderSection("Today", todayNotes);
+        renderSection("Stage", stageNotes);
     }
 
     private renderReviewItem(parent: HTMLElement, item: ReviewItem) {

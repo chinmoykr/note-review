@@ -169,7 +169,8 @@ var ReviewManager = class {
       if (presetName) {
         const nextDate = this.fmUtils.getProperty(file, FRONTMATTER_KEYS.NEXT_DATE);
         if (DateUtils.isDue(nextDate)) {
-          dueNotes.push({ file, presetName, nextDate });
+          const intervalIndex = Number(this.fmUtils.getProperty(file, FRONTMATTER_KEYS.INTERVAL_INDEX)) || 0;
+          dueNotes.push({ file, presetName, nextDate, intervalIndex });
         }
       }
     }
@@ -327,10 +328,23 @@ var ReviewView = class extends import_obsidian2.ItemView {
       emptyState.addClass("note-reviewer-empty");
       return;
     }
-    const listContainer = container.createDiv("note-reviewer-list");
-    for (const item of dueNotes) {
-      this.renderReviewItem(listContainer, item);
-    }
+    const todayStr = DateUtils.getTodayStr();
+    const stageNotes = dueNotes.filter((n) => n.intervalIndex === 0);
+    const todayNotes = dueNotes.filter((n) => n.intervalIndex > 0 && n.nextDate === todayStr);
+    const overdueNotes = dueNotes.filter((n) => n.intervalIndex > 0 && (n.nextDate || "") < todayStr);
+    const renderSection = (title, notes) => {
+      if (notes.length === 0)
+        return;
+      const subHeader = container.createEl("h5", { text: `${title} (${notes.length})` });
+      subHeader.addClass("note-reviewer-subheader");
+      const listContainer = container.createDiv("note-reviewer-list");
+      for (const item of notes) {
+        this.renderReviewItem(listContainer, item);
+      }
+    };
+    renderSection("Overdue", overdueNotes);
+    renderSection("Today", todayNotes);
+    renderSection("Stage", stageNotes);
   }
   renderReviewItem(parent, item) {
     const itemEl = parent.createDiv("note-reviewer-item");

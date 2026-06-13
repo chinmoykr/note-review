@@ -1,8 +1,16 @@
 .note-reviewer-header {
-    margin-top: 10px;
-    margin-bottom: 20px;
-    text-align: center;
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.note-reviewer-subheader {
+    margin-top: 16px;
+    margin-bottom: 8px;
+    font-weight: 600;
     color: var(--text-normal);
+    border-bottom: 1px solid var(--background-modifier-border);
+    padding-bottom: 4px;
 }
 
 .note-reviewer-empty {
