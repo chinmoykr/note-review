@@ -21,8 +21,13 @@ export class FrontmatterUtils {
      */
     getReviewPreset(file: TFile): string | null {
         const value = this.getProperty(file, FRONTMATTER_KEYS.REVIEW);
-        if (typeof value === "string" && value.trim().length > 0) {
-            return value.trim();
+        if (value !== undefined && value !== null) {
+            if (Array.isArray(value) && value.length > 0) {
+                return String(value[0]).trim().toLowerCase();
+            } else if (typeof value === "string" && value.trim().length > 0) {
+                return value.trim().toLowerCase();
+            }
+            return "standard"; // Fallback to standard if it's there but unreadable
         }
         return null;
     }

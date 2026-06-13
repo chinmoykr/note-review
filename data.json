@@ -4,6 +4,14 @@
     "Overdue",
     "Today"
   ],
+  "showDoneButton": true,
+  "showSkipButton": true,
+  "showPostponeButton": true,
+  "showAdjustButton": true,
+  "showPresetBadge": true,
+  "showLastReviewed": true,
+  "showNextDateInfo": true,
+  "showAdjustInfo": true,
   "presets": [
     {
       "name": "standard",

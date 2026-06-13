@@ -9,6 +9,14 @@ export interface ReviewPreset {
 export interface PluginSettings {
     presets: ReviewPreset[];
     sectionOrder: string[];
+    showDoneButton: boolean;
+    showSkipButton: boolean;
+    showPostponeButton: boolean;
+    showAdjustButton: boolean;
+    showPresetBadge: boolean;
+    showLastReviewed: boolean;
+    showNextDateInfo: boolean;
+    showAdjustInfo: boolean;
 }
 
 export interface NoteReviewerPluginType extends Plugin {
@@ -18,6 +26,14 @@ export interface NoteReviewerPluginType extends Plugin {
 
 export const DEFAULT_SETTINGS: PluginSettings = {
     sectionOrder: ["Overdue", "Today", "Stage"],
+    showDoneButton: true,
+    showSkipButton: true,
+    showPostponeButton: true,
+    showAdjustButton: true,
+    showPresetBadge: true,
+    showLastReviewed: true,
+    showNextDateInfo: true,
+    showAdjustInfo: true,
     presets: [
         {
             name: "standard",
@@ -41,5 +57,6 @@ export const FRONTMATTER_KEYS = {
     REVIEW: "review",
     NEXT_DATE: "review-next-date",
     INTERVAL_INDEX: "review-interval-index",
-    SKIP_COUNT: "review-skip-count"
+    SKIP_COUNT: "review-skip-count",
+    LAST_REVIEWED: "review-last-date"
 };

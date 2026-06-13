@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting, Notice } from "obsidian";
-import { ReviewPreset, NoteReviewerPluginType } from "../types";
+import { ReviewPreset, NoteReviewerPluginType, PluginSettings } from "../types";
 
 export class SettingsTab extends PluginSettingTab {
     plugin: NoteReviewerPluginType;
@@ -97,6 +97,48 @@ export class SettingsTab extends PluginSettingTab {
                 this.display(); // Full refresh to ensure clean state
             };
         });
+
+        containerEl.createEl("hr");
+
+        // Customisation Settings
+        containerEl.createEl("h3", { text: "UI Customisation" });
+        containerEl.createEl("p", {
+            text: "Toggle the visibility of elements in the Review card."
+        });
+
+        // Helper function to create an eye toggle
+        const createEyeToggle = (name: string, settingKey: keyof PluginSettings) => {
+            new Setting(containerEl)
+                .setName(name)
+                .addExtraButton(btn => {
+                    const isVisible = (this.plugin.settings as any)[settingKey] as boolean ?? true;
+                    btn.setIcon(isVisible ? "eye" : "eye-off");
+                    btn.setTooltip(isVisible ? "Click to hide" : "Click to show");
+                    btn.onClick(async () => {
+                        const newVal = !((this.plugin.settings as any)[settingKey] as boolean ?? true);
+                        (this.plugin.settings as any)[settingKey] = newVal;
+                        await this.plugin.saveSettings();
+                        btn.setIcon(newVal ? "eye" : "eye-off");
+                        btn.setTooltip(newVal ? "Click to hide" : "Click to show");
+                        
+                        // Force refresh
+                        this.app.workspace.getLeavesOfType("note-reviewer-view").forEach(leaf => {
+                            if (leaf.view && typeof (leaf.view as any).renderView === "function") {
+                                (leaf.view as any).renderView();
+                            }
+                        });
+                    });
+                });
+        };
+
+        createEyeToggle("Show 'Done' Button", "showDoneButton");
+        createEyeToggle("Show 'Skip' Button", "showSkipButton");
+        createEyeToggle("Show 'Postpone' Button", "showPostponeButton");
+        createEyeToggle("Show 'Adjust' Button", "showAdjustButton");
+        createEyeToggle("Show Preset Badge", "showPresetBadge");
+        createEyeToggle("Show Last Reviewed", "showLastReviewed");
+        createEyeToggle("Show Next Date Info", "showNextDateInfo");
+        createEyeToggle("Show Adjust Info", "showAdjustInfo");
 
         containerEl.createEl("hr");
 

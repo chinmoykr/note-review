@@ -32,6 +32,14 @@ var import_obsidian3 = require("obsidian");
 // src/types.ts
 var DEFAULT_SETTINGS = {
   sectionOrder: ["Overdue", "Today", "Stage"],
+  showDoneButton: true,
+  showSkipButton: true,
+  showPostponeButton: true,
+  showAdjustButton: true,
+  showPresetBadge: true,
+  showLastReviewed: true,
+  showNextDateInfo: true,
+  showAdjustInfo: true,
   presets: [
     {
       name: "standard",
@@ -54,7 +62,8 @@ var FRONTMATTER_KEYS = {
   REVIEW: "review",
   NEXT_DATE: "review-next-date",
   INTERVAL_INDEX: "review-interval-index",
-  SKIP_COUNT: "review-skip-count"
+  SKIP_COUNT: "review-skip-count",
+  LAST_REVIEWED: "review-last-date"
 };
 
 // src/settings/SettingsTab.ts
@@ -135,6 +144,40 @@ var SettingsTab = class extends import_obsidian.PluginSettingTab {
         this.display();
       };
     });
+    containerEl.createEl("hr");
+    containerEl.createEl("h3", { text: "UI Customisation" });
+    containerEl.createEl("p", {
+      text: "Toggle the visibility of elements in the Review card."
+    });
+    const createEyeToggle = (name, settingKey) => {
+      new import_obsidian.Setting(containerEl).setName(name).addExtraButton((btn) => {
+        var _a;
+        const isVisible = (_a = this.plugin.settings[settingKey]) != null ? _a : true;
+        btn.setIcon(isVisible ? "eye" : "eye-off");
+        btn.setTooltip(isVisible ? "Click to hide" : "Click to show");
+        btn.onClick(async () => {
+          var _a2;
+          const newVal = !((_a2 = this.plugin.settings[settingKey]) != null ? _a2 : true);
+          this.plugin.settings[settingKey] = newVal;
+          await this.plugin.saveSettings();
+          btn.setIcon(newVal ? "eye" : "eye-off");
+          btn.setTooltip(newVal ? "Click to hide" : "Click to show");
+          this.app.workspace.getLeavesOfType("note-reviewer-view").forEach((leaf) => {
+            if (leaf.view && typeof leaf.view.renderView === "function") {
+              leaf.view.renderView();
+            }
+          });
+        });
+      });
+    };
+    createEyeToggle("Show 'Done' Button", "showDoneButton");
+    createEyeToggle("Show 'Skip' Button", "showSkipButton");
+    createEyeToggle("Show 'Postpone' Button", "showPostponeButton");
+    createEyeToggle("Show 'Adjust' Button", "showAdjustButton");
+    createEyeToggle("Show Preset Badge", "showPresetBadge");
+    createEyeToggle("Show Last Reviewed", "showLastReviewed");
+    createEyeToggle("Show Next Date Info", "showNextDateInfo");
+    createEyeToggle("Show Adjust Info", "showAdjustInfo");
     containerEl.createEl("hr");
     containerEl.createEl("h3", { text: "Presets" });
     containerEl.createEl("p", {
@@ -239,7 +282,8 @@ var ReviewManager = class {
         const nextDate = this.fmUtils.getProperty(file, FRONTMATTER_KEYS.NEXT_DATE);
         if (DateUtils.isDue(nextDate)) {
           const intervalIndex = Number(this.fmUtils.getProperty(file, FRONTMATTER_KEYS.INTERVAL_INDEX)) || 0;
-          dueNotes.push({ file, presetName, nextDate, intervalIndex });
+          const lastReviewed = this.fmUtils.getProperty(file, FRONTMATTER_KEYS.LAST_REVIEWED) || null;
+          dueNotes.push({ file, presetName, nextDate, intervalIndex, lastReviewed });
         }
       }
     }
@@ -272,7 +316,8 @@ var ReviewManager = class {
       currentIndex = 0;
     await this.fmUtils.updateProperties(item.file, {
       [FRONTMATTER_KEYS.NEXT_DATE]: date,
-      [FRONTMATTER_KEYS.INTERVAL_INDEX]: currentIndex + 1
+      [FRONTMATTER_KEYS.INTERVAL_INDEX]: currentIndex + 1,
+      [FRONTMATTER_KEYS.LAST_REVIEWED]: DateUtils.getTodayStr()
     });
   }
   /**
@@ -431,42 +476,76 @@ var ReviewView = class extends import_obsidian2.ItemView {
   }
   renderReviewItem(parent, item) {
     const itemEl = parent.createDiv("note-reviewer-item");
-    const titleEl = itemEl.createDiv("note-reviewer-title");
+    const settings = this.reviewManager.settings;
+    const headerEl = itemEl.createDiv("note-reviewer-item-header");
+    const titleEl = headerEl.createDiv("note-reviewer-title");
     titleEl.setText(item.file.basename);
     titleEl.onclick = async () => {
       await this.app.workspace.getLeaf(false).openFile(item.file);
     };
+    if (settings.showLastReviewed !== false) {
+      const detailsEl = itemEl.createDiv("note-reviewer-item-details");
+      if (item.lastReviewed) {
+        detailsEl.createSpan({ text: `Last reviewed: ${item.lastReviewed}` });
+      } else {
+        detailsEl.createSpan({ text: `New to queue` });
+      }
+    }
     const actionsEl = itemEl.createDiv("note-reviewer-actions");
-    const doneBtn = actionsEl.createEl("button", { text: "Done" });
-    doneBtn.addClass("mod-cta");
-    doneBtn.onclick = async (e) => {
-      e.stopPropagation();
-      doneBtn.disabled = true;
-      await this.reviewManager.markDone(item);
-    };
-    const skipBtn = actionsEl.createEl("button", { text: "Skip" });
-    skipBtn.onclick = async (e) => {
-      e.stopPropagation();
-      skipBtn.disabled = true;
-      await this.reviewManager.skipReview(item);
-    };
-    const postponeBtn = actionsEl.createEl("button", { text: "Postpone" });
-    postponeBtn.onclick = async (e) => {
-      e.stopPropagation();
-      postponeBtn.disabled = true;
-      await this.reviewManager.postponeReview(item);
-    };
-    const adjustBtn = actionsEl.createEl("button", { text: "Adjust" });
-    adjustBtn.onclick = async (e) => {
-      e.stopPropagation();
-      adjustBtn.disabled = true;
-      await this.reviewManager.adjustReview(item);
-    };
+    if (settings.showDoneButton !== false) {
+      const doneBtn = actionsEl.createEl("button", { text: "\u2705 Done" });
+      doneBtn.addClass("mod-cta");
+      doneBtn.onclick = async (e) => {
+        e.stopPropagation();
+        doneBtn.disabled = true;
+        await this.reviewManager.markDone(item);
+      };
+    }
+    if (settings.showSkipButton !== false) {
+      const skipBtn = actionsEl.createEl("button", { text: "\u23ED\uFE0F Skip" });
+      skipBtn.onclick = async (e) => {
+        e.stopPropagation();
+        skipBtn.disabled = true;
+        await this.reviewManager.skipReview(item);
+      };
+    }
+    if (settings.showPostponeButton !== false) {
+      const postponeBtn = actionsEl.createEl("button", { text: "\u{1F4C5} Postpone" });
+      postponeBtn.onclick = async (e) => {
+        e.stopPropagation();
+        postponeBtn.disabled = true;
+        await this.reviewManager.postponeReview(item);
+      };
+    }
+    if (settings.showAdjustButton !== false) {
+      const adjustBtn = actionsEl.createEl("button", { text: "\u2696\uFE0F Adjust" });
+      adjustBtn.onclick = async (e) => {
+        e.stopPropagation();
+        adjustBtn.disabled = true;
+        await this.reviewManager.adjustReview(item);
+      };
+    }
     const doneSim = this.reviewManager.simulateDone(item);
     const adjustSim = this.reviewManager.getLowestLoadDay(item.file.path);
-    const actionsInfoEl = itemEl.createDiv("note-reviewer-actions-info");
-    actionsInfoEl.createSpan({ text: `Done -> ${doneSim.date} (+${doneSim.daysToAdd}d)` });
-    actionsInfoEl.createSpan({ text: `Adjust -> ${adjustSim.date} (+${adjustSim.daysToAdd}d)` });
+    if (settings.showNextDateInfo !== false || settings.showPresetBadge !== false || settings.showAdjustInfo !== false) {
+      const footerEl = itemEl.createDiv("note-reviewer-footer");
+      if (settings.showNextDateInfo !== false || settings.showPresetBadge !== false) {
+        const doneRow = footerEl.createDiv("note-reviewer-footer-row");
+        if (settings.showNextDateInfo !== false) {
+          doneRow.createSpan({ text: `\u2705 Next: ${doneSim.date} (+${doneSim.daysToAdd}d)` });
+        } else {
+          doneRow.createSpan();
+        }
+        if (settings.showPresetBadge !== false) {
+          const presetBadge = doneRow.createSpan("note-reviewer-badge");
+          presetBadge.setText(item.presetName);
+        }
+      }
+      if (settings.showAdjustInfo !== false) {
+        const adjustRow = footerEl.createDiv("note-reviewer-footer-row");
+        adjustRow.createSpan({ text: `\u2696\uFE0F Adjust: ${adjustSim.date} (+${adjustSim.daysToAdd}d)` });
+      }
+    }
   }
 };
 
@@ -488,8 +567,13 @@ var FrontmatterUtils = class {
    */
   getReviewPreset(file) {
     const value = this.getProperty(file, FRONTMATTER_KEYS.REVIEW);
-    if (typeof value === "string" && value.trim().length > 0) {
-      return value.trim();
+    if (value !== void 0 && value !== null) {
+      if (Array.isArray(value) && value.length > 0) {
+        return String(value[0]).trim().toLowerCase();
+      } else if (typeof value === "string" && value.trim().length > 0) {
+        return value.trim().toLowerCase();
+      }
+      return "standard";
     }
     return null;
   }

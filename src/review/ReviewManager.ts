@@ -8,6 +8,7 @@ export interface ReviewItem {
     presetName: string;
     nextDate: string | null;
     intervalIndex: number;
+    lastReviewed: string | null;
 }
 
 export class ReviewManager {
@@ -34,7 +35,8 @@ export class ReviewManager {
                 const nextDate = this.fmUtils.getProperty(file, FRONTMATTER_KEYS.NEXT_DATE);
                 if (DateUtils.isDue(nextDate)) {
                     const intervalIndex = Number(this.fmUtils.getProperty(file, FRONTMATTER_KEYS.INTERVAL_INDEX)) || 0;
-                    dueNotes.push({ file, presetName, nextDate, intervalIndex });
+                    const lastReviewed = this.fmUtils.getProperty(file, FRONTMATTER_KEYS.LAST_REVIEWED) || null;
+                    dueNotes.push({ file, presetName, nextDate, intervalIndex, lastReviewed });
                 }
             }
         }
@@ -73,7 +75,8 @@ export class ReviewManager {
         
         await this.fmUtils.updateProperties(item.file, {
             [FRONTMATTER_KEYS.NEXT_DATE]: date,
-            [FRONTMATTER_KEYS.INTERVAL_INDEX]: currentIndex + 1
+            [FRONTMATTER_KEYS.INTERVAL_INDEX]: currentIndex + 1,
+            [FRONTMATTER_KEYS.LAST_REVIEWED]: DateUtils.getTodayStr()
         });
     }
 

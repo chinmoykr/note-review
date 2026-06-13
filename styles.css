@@ -28,25 +28,32 @@
 }
 
 .note-reviewer-item {
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    margin-bottom: 12px;
     background-color: var(--background-secondary);
     border: 1px solid var(--background-modifier-border);
     border-radius: 8px;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    transition: background-color 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .note-reviewer-item:hover {
     background-color: var(--background-secondary-alt);
 }
 
+.note-reviewer-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 4px;
+}
+
 .note-reviewer-title {
     font-weight: 600;
-    font-size: 1.1em;
-    color: var(--text-normal);
+    font-size: 1.05em;
     cursor: pointer;
+    color: var(--text-normal);
 }
 
 .note-reviewer-title:hover {
@@ -54,11 +61,27 @@
     text-decoration: underline;
 }
 
+.note-reviewer-badge {
+    font-size: 0.7em;
+    text-transform: uppercase;
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 700;
+}
+
+.note-reviewer-item-details {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
 .note-reviewer-actions {
     display: flex;
     gap: 8px;
-    justify-content: space-between;
     flex-wrap: wrap;
+    justify-content: space-between;
 }
 
 .note-reviewer-actions button {
@@ -80,13 +103,21 @@
     cursor: not-allowed;
 }
 
-.note-reviewer-actions-info {
+.note-reviewer-footer {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     font-size: 0.85em;
     color: var(--text-muted);
-    margin-top: 8px;
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--background-modifier-border);
+}
+
+.note-reviewer-footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .note-reviewer-drag-list {

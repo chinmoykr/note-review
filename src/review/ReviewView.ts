@@ -102,51 +102,93 @@ export class ReviewView extends ItemView {
 
     private renderReviewItem(parent: HTMLElement, item: ReviewItem) {
         const itemEl = parent.createDiv("note-reviewer-item");
+        const settings = this.reviewManager.settings;
         
-        // Title area (clickable to open)
-        const titleEl = itemEl.createDiv("note-reviewer-title");
+        // Header row (Title)
+        const headerEl = itemEl.createDiv("note-reviewer-item-header");
+        
+        const titleEl = headerEl.createDiv("note-reviewer-title");
         titleEl.setText(item.file.basename);
         titleEl.onclick = async () => {
             await this.app.workspace.getLeaf(false).openFile(item.file);
         };
 
+        // Details row (Last reviewed)
+        if (settings.showLastReviewed !== false) {
+            const detailsEl = itemEl.createDiv("note-reviewer-item-details");
+            if (item.lastReviewed) {
+                detailsEl.createSpan({ text: `Last reviewed: ${item.lastReviewed}` });
+            } else {
+                detailsEl.createSpan({ text: `New to queue` });
+            }
+        }
+
         // Actions area
         const actionsEl = itemEl.createDiv("note-reviewer-actions");
 
-        const doneBtn = actionsEl.createEl("button", { text: "Done" });
-        doneBtn.addClass("mod-cta");
-        doneBtn.onclick = async (e) => {
-            e.stopPropagation();
-            doneBtn.disabled = true;
-            await this.reviewManager.markDone(item);
-        };
+        if (settings.showDoneButton !== false) {
+            const doneBtn = actionsEl.createEl("button", { text: "✅ Done" });
+            doneBtn.addClass("mod-cta");
+            doneBtn.onclick = async (e) => {
+                e.stopPropagation();
+                doneBtn.disabled = true;
+                await this.reviewManager.markDone(item);
+            };
+        }
 
-        const skipBtn = actionsEl.createEl("button", { text: "Skip" });
-        skipBtn.onclick = async (e) => {
-            e.stopPropagation();
-            skipBtn.disabled = true;
-            await this.reviewManager.skipReview(item);
-        };
+        if (settings.showSkipButton !== false) {
+            const skipBtn = actionsEl.createEl("button", { text: "⏭️ Skip" });
+            skipBtn.onclick = async (e) => {
+                e.stopPropagation();
+                skipBtn.disabled = true;
+                await this.reviewManager.skipReview(item);
+            };
+        }
 
-        const postponeBtn = actionsEl.createEl("button", { text: "Postpone" });
-        postponeBtn.onclick = async (e) => {
-            e.stopPropagation();
-            postponeBtn.disabled = true;
-            await this.reviewManager.postponeReview(item);
-        };
+        if (settings.showPostponeButton !== false) {
+            const postponeBtn = actionsEl.createEl("button", { text: "📅 Postpone" });
+            postponeBtn.onclick = async (e) => {
+                e.stopPropagation();
+                postponeBtn.disabled = true;
+                await this.reviewManager.postponeReview(item);
+            };
+        }
 
-        const adjustBtn = actionsEl.createEl("button", { text: "Adjust" });
-        adjustBtn.onclick = async (e) => {
-            e.stopPropagation();
-            adjustBtn.disabled = true;
-            await this.reviewManager.adjustReview(item);
-        };
+        if (settings.showAdjustButton !== false) {
+            const adjustBtn = actionsEl.createEl("button", { text: "⚖️ Adjust" });
+            adjustBtn.onclick = async (e) => {
+                e.stopPropagation();
+                adjustBtn.disabled = true;
+                await this.reviewManager.adjustReview(item);
+            };
+        }
 
         const doneSim = this.reviewManager.simulateDone(item);
         const adjustSim = this.reviewManager.getLowestLoadDay(item.file.path);
 
-        const actionsInfoEl = itemEl.createDiv("note-reviewer-actions-info");
-        actionsInfoEl.createSpan({ text: `Done -> ${doneSim.date} (+${doneSim.daysToAdd}d)` });
-        actionsInfoEl.createSpan({ text: `Adjust -> ${adjustSim.date} (+${adjustSim.daysToAdd}d)` });
+        // Slick Footer Area
+        if (settings.showNextDateInfo !== false || settings.showPresetBadge !== false || settings.showAdjustInfo !== false) {
+            const footerEl = itemEl.createDiv("note-reviewer-footer");
+            
+            if (settings.showNextDateInfo !== false || settings.showPresetBadge !== false) {
+                const doneRow = footerEl.createDiv("note-reviewer-footer-row");
+                
+                if (settings.showNextDateInfo !== false) {
+                    doneRow.createSpan({ text: `✅ Next: ${doneSim.date} (+${doneSim.daysToAdd}d)` });
+                } else {
+                    doneRow.createSpan(); // spacer
+                }
+                
+                if (settings.showPresetBadge !== false) {
+                    const presetBadge = doneRow.createSpan("note-reviewer-badge");
+                    presetBadge.setText(item.presetName);
+                }
+            }
+
+            if (settings.showAdjustInfo !== false) {
+                const adjustRow = footerEl.createDiv("note-reviewer-footer-row");
+                adjustRow.createSpan({ text: `⚖️ Adjust: ${adjustSim.date} (+${adjustSim.daysToAdd}d)` });
+            }
+        }
     }
 }
