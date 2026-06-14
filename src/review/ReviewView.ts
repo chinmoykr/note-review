@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, setIcon } from "obsidian";
+import { ItemView, WorkspaceLeaf, setIcon, MarkdownRenderer } from "obsidian";
 import { ReviewManager, ReviewItem } from "./ReviewManager";
 import { DateUtils } from "../utils/DateUtils";
 
@@ -110,41 +110,51 @@ export class ReviewView extends ItemView {
         const titleEl = headerEl.createDiv("note-reviewer-title");
         
         const cache = this.app.metadataCache.getFileCache(item.file);
-        const isPebbleReview = cache?.frontmatter?.["pebble-note-review"] === true;
+        let hasPebbleTag = false;
+        
+        if (cache?.tags) {
+            hasPebbleTag = cache.tags.some(t => t.tag.toLowerCase() === "#pebble" || t.tag.toLowerCase() === "pebble");
+        }
+        if (!hasPebbleTag && cache?.frontmatter?.tags) {
+            const fmTags = cache.frontmatter.tags;
+            if (Array.isArray(fmTags)) {
+                hasPebbleTag = fmTags.some(t => String(t).toLowerCase() === "pebble" || String(t).toLowerCase() === "#pebble");
+            } else if (typeof fmTags === "string") {
+                hasPebbleTag = fmTags.toLowerCase().split(/[,\s]+/).some(t => t === "pebble" || t === "#pebble");
+            }
+        }
 
-        if (isPebbleReview) {
+        if (hasPebbleTag) {
             const content = await this.app.vault.cachedRead(item.file);
             const contentWithoutFrontmatter = content.replace(/^---[\r\n]+[\s\S]*?[\r\n]+---[\r\n]+/, "").trim();
 
-            if (/\[(.*?)\]\(cloze:\)/.test(contentWithoutFrontmatter)) {
-                titleEl.empty();
-                const parts = contentWithoutFrontmatter.split(/(\[.*?\]\(cloze:\))/);
+            titleEl.empty();
+            await MarkdownRenderer.render(this.app, contentWithoutFrontmatter || item.file.basename, titleEl, item.file.path, this);
+
+            const clozeLinks = titleEl.querySelectorAll('a[href="cloze:"]');
+            clozeLinks.forEach(link => {
+                const clozeWord = link.textContent || "";
                 
-                for (const part of parts) {
-                    const match = part.match(/\[(.*?)\]\(cloze:\)/);
-                    if (match) {
-                        const clozeWord = match[1];
-                        const clozeContainer = titleEl.createSpan("note-reviewer-cloze-container");
-                        
-                        const clozeText = clozeContainer.createSpan("note-reviewer-cloze-text");
-                        clozeText.setText("____");
-                        clozeText.style.cursor = "pointer";
-                        
-                        clozeText.onclick = (e) => {
-                            e.stopPropagation();
-                            if (clozeText.getText() === "____") {
-                                clozeText.setText(clozeWord);
-                            } else {
-                                clozeText.setText("____");
-                            }
-                        };
+                const clozeContainer = createSpan("note-reviewer-cloze-container");
+                const clozeText = clozeContainer.createSpan("note-reviewer-cloze-text");
+                clozeText.setText("____");
+                clozeText.style.cursor = "pointer";
+                
+                clozeText.onclick = (e) => {
+                    e.stopPropagation();
+                    e.preventDefault(); // prevent any default link action just in case
+                    if (clozeText.getText() === "____") {
+                        clozeText.setText(clozeWord);
+                        clozeText.style.textDecoration = "underline";
+                        clozeText.style.textDecorationColor = "var(--text-muted)";
                     } else {
-                        titleEl.createSpan().setText(part);
+                        clozeText.setText("____");
+                        clozeText.style.textDecoration = "none";
                     }
-                }
-            } else {
-                titleEl.setText(contentWithoutFrontmatter || item.file.basename);
-            }
+                };
+                
+                link.parentNode?.replaceChild(clozeContainer, link);
+            });
         } else {
             titleEl.setText(item.file.basename);
         }
@@ -202,6 +212,7 @@ export class ReviewView extends ItemView {
             };
         }
 
+
         const doneSim = this.reviewManager.simulateDone(item);
         const adjustSim = this.reviewManager.getLowestLoadDay(item.file.path);
 
@@ -227,6 +238,36 @@ export class ReviewView extends ItemView {
             if (settings.showAdjustInfo !== false) {
                 const adjustRow = footerEl.createDiv("note-reviewer-footer-row");
                 adjustRow.createSpan({ text: `⚖️ Adjust: ${adjustSim.date} (+${adjustSim.daysToAdd}d)` });
+
+                const iconContainer = adjustRow.createDiv("note-reviewer-footer-icons");
+                iconContainer.style.display = "flex";
+                iconContainer.style.gap = "10px";
+                iconContainer.style.alignItems = "center";
+
+                const editIcon = iconContainer.createSpan();
+                setIcon(editIcon, "pencil");
+                editIcon.style.cursor = "pointer";
+                editIcon.style.opacity = "0.6";
+                editIcon.onclick = async (e) => {
+                    e.stopPropagation();
+                    await this.app.workspace.getLeaf(false).openFile(item.file);
+                };
+                editIcon.onmouseenter = () => editIcon.style.opacity = "1";
+                editIcon.onmouseleave = () => editIcon.style.opacity = "0.6";
+
+                const deleteIcon = iconContainer.createSpan();
+                setIcon(deleteIcon, "trash-2");
+                deleteIcon.style.cursor = "pointer";
+                deleteIcon.style.opacity = "0.6";
+                deleteIcon.onclick = async (e) => {
+                    e.stopPropagation();
+                    if (window.confirm(`Are you sure you want to delete "${item.file.basename}"?`)) {
+                        deleteIcon.style.pointerEvents = "none";
+                        await this.app.vault.trash(item.file, true);
+                    }
+                };
+                deleteIcon.onmouseenter = () => deleteIcon.style.opacity = "1";
+                deleteIcon.onmouseleave = () => deleteIcon.style.opacity = "0.6";
             }
         }
     }
