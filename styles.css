@@ -159,3 +159,12 @@
 .note-reviewer-drag-handle:active {
     cursor: grabbing;
 }
+
+.note-reviewer-cloze-container {
+    display: inline-flex;
+    align-items: center;
+}
+
+.note-reviewer-cloze-text {
+    margin: 0 2px;
+}

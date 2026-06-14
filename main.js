@@ -475,14 +475,42 @@ var ReviewView = class extends import_obsidian2.ItemView {
     }
   }
   async renderReviewItem(parent, item) {
+    var _a;
     const itemEl = parent.createDiv("note-reviewer-item");
     const settings = this.reviewManager.settings;
     const headerEl = itemEl.createDiv("note-reviewer-item-header");
     const titleEl = headerEl.createDiv("note-reviewer-title");
-    if (item.presetName.toLowerCase() === "pebble") {
+    const cache = this.app.metadataCache.getFileCache(item.file);
+    const isPebbleReview = ((_a = cache == null ? void 0 : cache.frontmatter) == null ? void 0 : _a["pebble-note-review"]) === true;
+    if (isPebbleReview) {
       const content = await this.app.vault.cachedRead(item.file);
       const contentWithoutFrontmatter = content.replace(/^---[\r\n]+[\s\S]*?[\r\n]+---[\r\n]+/, "").trim();
-      titleEl.setText(contentWithoutFrontmatter || item.file.basename);
+      if (/\[(.*?)\]\(cloze:\)/.test(contentWithoutFrontmatter)) {
+        titleEl.empty();
+        const parts = contentWithoutFrontmatter.split(/(\[.*?\]\(cloze:\))/);
+        for (const part of parts) {
+          const match = part.match(/\[(.*?)\]\(cloze:\)/);
+          if (match) {
+            const clozeWord = match[1];
+            const clozeContainer = titleEl.createSpan("note-reviewer-cloze-container");
+            const clozeText = clozeContainer.createSpan("note-reviewer-cloze-text");
+            clozeText.setText("____");
+            clozeText.style.cursor = "pointer";
+            clozeText.onclick = (e) => {
+              e.stopPropagation();
+              if (clozeText.getText() === "____") {
+                clozeText.setText(clozeWord);
+              } else {
+                clozeText.setText("____");
+              }
+            };
+          } else {
+            titleEl.createSpan().setText(part);
+          }
+        }
+      } else {
+        titleEl.setText(contentWithoutFrontmatter || item.file.basename);
+      }
     } else {
       titleEl.setText(item.file.basename);
     }
