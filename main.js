@@ -434,6 +434,7 @@ var ReviewView = class extends import_obsidian2.ItemView {
   }
   async renderView() {
     const container = this.containerEl.children[1];
+    const savedScrollTop = container.scrollTop;
     container.empty();
     const header = container.createEl("h4", { text: "Due for Review" });
     header.addClass("note-reviewer-header");
@@ -473,6 +474,9 @@ var ReviewView = class extends import_obsidian2.ItemView {
       else if (sectionName === "Stage")
         await renderSection("Stage", stageNotes, true);
     }
+    requestAnimationFrame(() => {
+      container.scrollTop = savedScrollTop;
+    });
   }
   async renderReviewItem(parent, item) {
     var _a;

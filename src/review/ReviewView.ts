@@ -50,7 +50,8 @@ export class ReviewView extends ItemView {
     }
 
     async renderView() {
-        const container = this.containerEl.children[1];
+        const container = this.containerEl.children[1] as HTMLElement;
+        const savedScrollTop = container.scrollTop;
         container.empty();
 
         const header = container.createEl("h4", { text: "Due for Review" });
@@ -98,6 +99,11 @@ export class ReviewView extends ItemView {
             else if (sectionName === "Today") await renderSection("Today", todayNotes, true);
             else if (sectionName === "Stage") await renderSection("Stage", stageNotes, true);
         }
+
+        // Restore scroll position
+        requestAnimationFrame(() => {
+            container.scrollTop = savedScrollTop;
+        });
     }
 
     private async renderReviewItem(parent: HTMLElement, item: ReviewItem) {
